@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "Exquisite Meals",
+      "path": "expo",
+      "framework": "react-native"
+    }
+  ]
+}
