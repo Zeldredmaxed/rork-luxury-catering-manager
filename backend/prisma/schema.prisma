@@ -1,0 +1,300 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum MenuCategory {
+  MEAL_PREP
+  FAMILY_MEALS
+  CATERING
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum DeliveryType {
+  DELIVERY
+  PICKUP
+}
+
+enum RewardsTier {
+  BRONZE
+  SILVER
+  GOLD
+  VIP
+}
+
+enum MessageSender {
+  USER
+  ADMIN
+  ASSISTANT
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+enum SubscriptionPlan {
+  WEEKLY_BASIC
+  WEEKLY_PREMIUM
+  WEEKLY_FAMILY
+}
+
+// ─── Users ────────────────────────────────────────────
+
+model User {
+  id                String       @id @default(cuid())
+  email             String       @unique
+  passwordHash      String
+  name              String
+  phone             String?
+  avatar            String?
+  role              UserRole     @default(CUSTOMER)
+  dietaryPreferences String[]    @default([])
+  allergies         String[]     @default([])
+  rewardsPoints     Int          @default(0)
+  rewardsTier       RewardsTier  @default(BRONZE)
+  totalOrders       Int          @default(0)
+  referralCode      String?      @unique
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  addresses         Address[]
+  orders            Order[]
+  conversations     ChatConversation[]
+  redemptions       RewardRedemption[]
+  subscriptions     Subscription[]
+  favorites         Favorite[]
+  referralsSent     Referral[]   @relation("Referrer")
+  referralsReceived Referral[]   @relation("Referee")
+  pushTokens        PushToken[]
+
+  @@map("users")
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  label     String
+  street    String
+  city      String
+  state     String
+  zip       String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@map("addresses")
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String   // ios, android, web
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("push_tokens")
+}
+
+// ─── Menu ─────────────────────────────────────────────
+
+model MenuItem {
+  id          String       @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  image       String?
+  category    MenuCategory
+  tags        String[]     @default([])
+  calories    Int?
+  prepTime    String?
+  servings    Int?
+  featured    Boolean      @default(false)
+  popular     Boolean      @default(false)
+  available   Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  orderItems OrderItem[]
+  favorites  Favorite[]
+
+  @@map("menu_items")
+}
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  menuItemId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, menuItemId])
+  @@map("favorites")
+}
+
+// ─── Orders ───────────────────────────────────────────
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  total           Float
+  status          OrderStatus @default(PENDING)
+  deliveryType    DeliveryType
+  scheduledDate   String?
+  scheduledTime   String?
+  notes           String?
+  addressId       String?
+  stripePaymentId String?
+  pointsEarned    Int         @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user    User       @relation(fields: [userId], references: [id])
+  address Address?   @relation(fields: [addressId], references: [id])
+  items   OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String @id @default(cuid())
+  orderId    String
+  menuItemId String
+  quantity   Int
+  notes      String?
+  unitPrice  Float
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+// ─── Rewards ──────────────────────────────────────────
+
+model Reward {
+  id          String  @id @default(cuid())
+  name        String
+  description String
+  pointsCost  Int
+  image       String?
+  active      Boolean @default(true)
+
+  redemptions RewardRedemption[]
+
+  @@map("rewards")
+}
+
+model RewardRedemption {
+  id         String   @id @default(cuid())
+  userId     String
+  rewardId   String
+  redeemedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  reward Reward @relation(fields: [rewardId], references: [id])
+
+  @@map("reward_redemptions")
+}
+
+// ─── Chat / Messaging ────────────────────────────────
+
+model ChatConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String?
+  orderId   String?  // optional link to an order
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id])
+  messages ChatMessage[]
+
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String        @id @default(cuid())
+  conversationId String
+  text           String
+  sender         MessageSender
+  image          String?
+  createdAt      DateTime      @default(now())
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
+// ─── Promotions ──────────────────────────────────────
+
+model Promotion {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  image       String?
+  discount    String?
+  validUntil  DateTime
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("promotions")
+}
+
+// ─── Subscriptions ───────────────────────────────────
+
+model Subscription {
+  id            String             @id @default(cuid())
+  userId        String
+  plan          SubscriptionPlan
+  status        SubscriptionStatus @default(ACTIVE)
+  stripeSubId   String?
+  nextDelivery  DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("subscriptions")
+}
+
+// ─── Referrals ───────────────────────────────────────
+
+model Referral {
+  id             String   @id @default(cuid())
+  referrerId     String
+  refereeId      String?
+  code           String   @unique
+  rewardCredited Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  referrer User  @relation("Referrer", fields: [referrerId], references: [id])
+  referee  User? @relation("Referee", fields: [refereeId], references: [id])
+
+  @@map("referrals")
+}

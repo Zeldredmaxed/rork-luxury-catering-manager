@@ -16,6 +16,13 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerBackTitle: 'Back' }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
+        name="auth/index"
+        options={{
+          headerShown: false,
+          presentation: 'fullScreenModal',
+        }}
+      />
+      <Stack.Screen
         name="meal/[id]"
         options={{
           headerShown: false,
@@ -30,6 +37,18 @@ function RootLayoutNav() {
           headerTintColor: Colors.text,
           headerTitleStyle: { fontWeight: '600' as const },
         }}
+      />
+      <Stack.Screen
+        name="subscriptions/index"
+        options={{ headerShown: false, presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="referral/index"
+        options={{ headerShown: false, presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="catering/index"
+        options={{ headerShown: false, presentation: 'modal' }}
       />
     </Stack>
   );
