@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import {
   User,
   MapPin,
@@ -36,14 +37,15 @@ interface ProfileMenuItem {
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { user } = useUser();
 
   const activeOrders = pastOrders.filter(o => o.status !== 'delivered');
 
-  const handlePress = useCallback((label: string) => {
+  const navigateTo = useCallback((route: string) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert(label, 'This feature is coming soon!');
-  }, []);
+    router.push(route as any);
+  }, [router]);
 
   const menuSections: { title: string; items: ProfileMenuItem[] }[] = [
     {
@@ -53,12 +55,12 @@ export default function ProfileScreen() {
           icon: <Clock size={20} color={Colors.accent} />,
           label: 'Order History',
           subtitle: `${user.totalOrders} orders`,
-          onPress: () => handlePress('Order History'),
+          onPress: () => navigateTo('/(tabs)/profile/order-history'),
         },
         {
           icon: <Heart size={20} color={Colors.accent} />,
           label: 'Favorites',
-          onPress: () => handlePress('Favorites'),
+          onPress: () => navigateTo('/(tabs)/profile/favorites'),
         },
       ],
     },
@@ -69,18 +71,18 @@ export default function ProfileScreen() {
           icon: <MapPin size={20} color={Colors.accent} />,
           label: 'Saved Addresses',
           subtitle: `${user.savedAddresses.length} addresses`,
-          onPress: () => handlePress('Saved Addresses'),
+          onPress: () => navigateTo('/(tabs)/profile/saved-addresses'),
         },
         {
           icon: <CreditCard size={20} color={Colors.accent} />,
           label: 'Payment Methods',
-          onPress: () => handlePress('Payment Methods'),
+          onPress: () => navigateTo('/(tabs)/profile/payment-methods'),
         },
         {
           icon: <Leaf size={20} color={Colors.accent} />,
           label: 'Dietary Preferences',
           subtitle: user.dietaryPreferences.join(', ') || 'None set',
-          onPress: () => handlePress('Dietary Preferences'),
+          onPress: () => navigateTo('/(tabs)/profile/dietary-preferences'),
         },
       ],
     },
@@ -90,22 +92,22 @@ export default function ProfileScreen() {
         {
           icon: <Bell size={20} color={Colors.accent} />,
           label: 'Notifications',
-          onPress: () => handlePress('Notifications'),
+          onPress: () => navigateTo('/(tabs)/profile/notifications'),
         },
         {
           icon: <Shield size={20} color={Colors.accent} />,
           label: 'Privacy & Security',
-          onPress: () => handlePress('Privacy & Security'),
+          onPress: () => navigateTo('/(tabs)/profile/privacy-security'),
         },
         {
           icon: <HelpCircle size={20} color={Colors.accent} />,
           label: 'Help & Support',
-          onPress: () => handlePress('Help & Support'),
+          onPress: () => navigateTo('/(tabs)/profile/help-support'),
         },
         {
           icon: <Settings size={20} color={Colors.accent} />,
           label: 'App Settings',
-          onPress: () => handlePress('App Settings'),
+          onPress: () => navigateTo('/(tabs)/profile/app-settings'),
         },
       ],
     },
@@ -127,13 +129,16 @@ export default function ProfileScreen() {
             <Text style={styles.profileEmail}>{user.email}</Text>
             <Text style={styles.profilePhone}>{user.phone}</Text>
           </View>
-          <Pressable style={styles.editButton} onPress={() => handlePress('Edit Profile')}>
+          <Pressable style={styles.editButton} onPress={() => navigateTo('/(tabs)/profile/edit-profile')}>
             <Text style={styles.editButtonText}>Edit</Text>
           </Pressable>
         </View>
 
         {activeOrders.length > 0 && (
-          <View style={styles.activeOrderCard}>
+          <Pressable
+            style={styles.activeOrderCard}
+            onPress={() => navigateTo(`/(tabs)/profile/active-order?orderId=${activeOrders[0].id}`)}
+          >
             <View style={styles.activeOrderHeader}>
               <Text style={styles.activeOrderTitle}>Active Order</Text>
               <View style={styles.activeOrderBadge}>
@@ -152,7 +157,7 @@ export default function ProfileScreen() {
                 {activeOrders[0].deliveryType === 'delivery' ? 'Delivery' : 'Pickup'} · {activeOrders[0].scheduledTime}
               </Text>
             </View>
-          </View>
+          </Pressable>
         )}
 
         {menuSections.map(section => (

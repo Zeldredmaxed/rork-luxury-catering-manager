@@ -23,3 +23,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+ios/
+android/
+core
+node_modules
+.expo
