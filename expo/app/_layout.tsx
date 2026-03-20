@@ -14,14 +14,13 @@ const queryClient = new QueryClient();
 function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerBackTitle: 'Back' }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="auth/index"
         options={{
           headerShown: false,
-          presentation: 'fullScreenModal',
         }}
       />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="meal/[id]"
         options={{
