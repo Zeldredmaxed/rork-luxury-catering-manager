@@ -16,11 +16,13 @@ import { useRouter } from 'expo-router';
 import { Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { api } from '@/services/api';
+import { useUser } from '@/contexts/UserContext';
 import * as Haptics from 'expo-haptics';
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { refreshProfile } = useUser();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -56,6 +58,7 @@ export default function AuthScreen() {
         });
       }
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await refreshProfile();
       router.replace('/(tabs)/(home)');
     } catch (error: any) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
