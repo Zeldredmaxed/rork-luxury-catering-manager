@@ -23,3 +23,18 @@ services:
         sync: false
       - key: NODE_ENV
         value: production
+
+  - type: web
+    name: luxury-catering-admin
+    runtime: node
+    region: ohio
+    rootDir: admin
+    buildCommand: npm install && npm run build
+    startCommand: node .next/standalone/server.js
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://luxury-catering-api.onrender.com
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
