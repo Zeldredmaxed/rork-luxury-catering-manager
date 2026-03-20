@@ -1,8 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE = __DEV__
-  ? 'http://localhost:3001'  // Dev: local backend
-  : 'https://api.exquisitemeals.com'; // Production: deployed backend
+const API_BASE = 'https://luxury-catering-api.onrender.com';
 
 class ApiClient {
   private token: string | null = null;

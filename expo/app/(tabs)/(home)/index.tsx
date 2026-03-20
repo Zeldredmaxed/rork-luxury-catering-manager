@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ShoppingBag, ChevronRight, Sparkles, Crown, Home as HomeIcon, UtensilsCrossed } from 'lucide-react-native';
 import Colors from '@/constants/colors';
-import { menuItems, categories, promotions } from '@/mocks/menu';
+import { menuItems as mockMenuItems, categories, promotions as mockPromotions } from '@/mocks/menu';
+import { api } from '@/services/api';
+import { MenuItem, Promotion } from '@/types';
 import { useUser } from '@/contexts/UserContext';
 import { useCart } from '@/contexts/CartContext';
 import MenuCard from '@/components/MenuCard';
@@ -27,12 +29,50 @@ const categoryIcons: Record<string, React.ReactNode> = {
   'catering': <Crown size={22} color={Colors.accent} />,
 };
 
+const categoryMap: Record<string, string> = {
+  'MEAL_PREP': 'meal-prep',
+  'FAMILY_MEALS': 'family-meals',
+  'CATERING': 'catering',
+};
+
+function mapApiItem(item: any): MenuItem {
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    price: item.price,
+    image: item.image || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80',
+    category: (categoryMap[item.category] || item.category) as MenuItem['category'],
+    tags: item.tags || [],
+    calories: item.calories,
+    prepTime: item.prepTime,
+    servings: item.servings,
+    featured: item.featured,
+    popular: item.popular,
+  };
+}
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useUser();
   const { totalItems } = useCart();
   const scrollX = useRef(new Animated.Value(0)).current;
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
+  const [promotions, setPromotions] = useState<Promotion[]>(mockPromotions);
+
+  useEffect(() => {
+    api.getMenuItems().then((data: any) => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        setMenuItems(data.map(mapApiItem));
+      }
+    }).catch(() => {});
+    api.getPromotions().then((data: any) => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        setPromotions(data);
+      }
+    }).catch(() => {});
+  }, []);
 
   const featuredItems = menuItems.filter(item => item.featured);
   const popularItems = menuItems.filter(item => item.popular);

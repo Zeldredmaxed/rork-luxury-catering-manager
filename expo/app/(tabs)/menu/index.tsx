@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,12 +12,37 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Search, X, SlidersHorizontal, ShoppingBag } from 'lucide-react-native';
 import Colors from '@/constants/colors';
-import { menuItems, categories } from '@/mocks/menu';
+import { menuItems as mockMenuItems, categories } from '@/mocks/menu';
+import { api } from '@/services/api';
+import { MenuItem } from '@/types';
 import { useCart } from '@/contexts/CartContext';
 import MenuCard from '@/components/MenuCard';
 import * as Haptics from 'expo-haptics';
 
 const allCategories = [{ id: 'all', name: 'All' }, ...categories];
+
+const categoryMap: Record<string, string> = {
+  'MEAL_PREP': 'meal-prep',
+  'FAMILY_MEALS': 'family-meals',
+  'CATERING': 'catering',
+};
+
+function mapApiItem(item: any): MenuItem {
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    price: item.price,
+    image: item.image || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80',
+    category: (categoryMap[item.category] || item.category) as MenuItem['category'],
+    tags: item.tags || [],
+    calories: item.calories,
+    prepTime: item.prepTime,
+    servings: item.servings,
+    featured: item.featured,
+    popular: item.popular,
+  };
+}
 
 export default function MenuScreen() {
   const insets = useSafeAreaInsets();
@@ -28,6 +53,15 @@ export default function MenuScreen() {
   const [searchText, setSearchText] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const searchAnim = useRef(new Animated.Value(0)).current;
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
+
+  useEffect(() => {
+    api.getMenuItems().then((data: any) => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        setMenuItems(data.map(mapApiItem));
+      }
+    }).catch(() => {});
+  }, []);
 
   const filteredItems = useMemo(() => {
     let items = menuItems;
@@ -43,7 +77,7 @@ export default function MenuScreen() {
       );
     }
     return items;
-  }, [selectedCategory, searchText]);
+  }, [selectedCategory, searchText, menuItems]);
 
   const toggleSearch = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
